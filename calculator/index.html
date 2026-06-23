@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nello's Magic Calculator 💖</title>
+    
+    <!-- Cache-Control: Verhindert, dass Browser die Seite hartnäckig zwischenspeichern -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <script>
+        // Sicherheits-Check: Falls der Nutzer nicht über das Hauptportal eingeloggt ist, zurückleiten!
+        // Lokal (file://) erlauben wir den Zugriff immer für einfaches Testen, da sessionStorage dort oft blockiert wird.
+        try {
+            if (location.protocol !== 'file:' && sessionStorage.getItem('kai_dev_unlocked') !== 'true') {
+                window.location.href = '../index.html';
+            }
+        } catch (e) {
+            console.warn("SessionStorage nicht verfügbar im lokalen Modus.");
+        }
+    </script>
+    
+    <!-- Google Fonts for gorgeous typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Theme 1: Neon Fusion (Default) */
+            --bg-gradient: linear-gradient(135deg, #0f172a, #1e1b4b);
+            --glow-color-1: #00f2fe; /* Turquoise */
+            --glow-color-2: #7f00ff; /* Purple */
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+            
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            
+            --btn-number: rgba(255, 255, 255, 0.06);
+            --btn-operator: rgba(127, 0, 255, 0.25);
+            --btn-special: rgba(0, 242, 254, 0.25);
+            
+            --accent-purple: #9d4edd;
+            --accent-turquoise: #00f2fe;
+            --accent-heart: #ff477e;
+        }
+
+        /* Turquoise Theme Override */
+        [data-theme="turquoise"] {
+            --bg-gradient: linear-gradient(135deg, #022c22, #064e3b, #022c22);
+            --glow-color-1: #00f2fe;
+            --glow-color-2: #059669;
+            --btn-operator: rgba(4, 120, 87, 0.3);
+            --btn-special: rgba(6, 182, 212, 0.3);
+            --accent-purple: #10b981;
+        }
+
+        /* Purple Theme Override */
+        [data-theme="purple"] {
+            --bg-gradient: linear-gradient(135deg, #1e1b4b, #311042, #1e1b4b);
+            --glow-color-1: #c084fc;
+            --glow-color-2: #7f00ff;
+            --btn-operator: rgba(127, 0, 255, 0.35);
+            --btn-special: rgba(192, 132, 252, 0.25);
+            --accent-turquoise: #c084fc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            padding: 15px;
+        }
+
+        /* Animated Background Particles / Ambient Glow */
+        .ambient-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.3;
+            animation: floatGlow 12s infinite alternate ease-in-out;
+        }
+
+        .glow-circle-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--glow-color-1);
+            top: 15%;
+            left: 10%;
+        }
+
+        .glow-circle-2 {
+            width: 350px;
+            height: 350px;
+            background: var(--glow-color-2);
+            bottom: 15%;
+            right: 10%;
+            animation-delay: -6s;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, 45px) scale(1.2); }
+        }
+
+        /* Container for Glass Card */
+        .calculator-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 390px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Top Header Area */
+        .calculator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+        }
+
+        .logo-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--glow-color-1), #ff79c6, var(--glow-color-2));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:active {
+            transform: scale(0.9);
+            background: var(--glass-highlight);
+        }
+
+        /* Themes Selector Popup */
+        .theme-panel {
+            position: absolute;
+            top: 70px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: background 0.2s;
+        }
+
+        .theme-option:hover, .theme-option.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        /* Screen Display */
+        .display-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            min-height: 120px;
+            padding: 10px 4px;
+            word-break: break-all;
+            word-wrap: break-word;
+        }
+
+        .formula-preview {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            min-height: 1.5rem;
+            text-align: right;
+            width: 100%;
+            transition: all 0.2s ease;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .main-input {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: right;
+            width: 100%;
+            line-height: 1.1;
+            transition: font-size 0.15s ease;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        .main-input::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome/Safari */
+        }
+
+        /* Grid of Buttons */
+        .calculator-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        button.calc-btn {
+            border: none;
+            outline: none;
+            height: 68px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Button Types Styling */
+        .btn-num {
+            background: var(--btn-number);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .btn-num:active {
+            background: var(--glass-highlight);
+            transform: scale(0.95);
+        }
+
+        .btn-op {
+            background: var(--btn-operator);
+            font-weight: 600;
+            color: #d8b4fe;
+            border: 1px solid rgba(127, 0, 255, 0.1);
+        }
+
+        .btn-op:active {
+            background: rgba(127, 0, 255, 0.5);
+            transform: scale(0.95);
+        }
+
+        .btn-fn {
+            background: var(--btn-special);
+            color: #99f6e4;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+        }
+
+        .btn-fn:active {
+            background: rgba(0, 242, 254, 0.5);
+            transform: scale(0.95);
+        }
+
+        /* Equal button - Purple/Turquoise gradient style */
+        .btn-eq {
+            background: linear-gradient(135deg, var(--glow-color-1), var(--glow-color-2));
+            grid-column: span 1;
+            font-weight: 700;
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(127, 0, 255, 0.3);
+            border: none;
+        }
+
+        .btn-eq:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 10px rgba(127, 0, 255, 0.2);
+            filter: brightness(1.1);
+        }
+
+        /* Love/Heart Button */
+        .btn-heart {
+            background: rgba(255, 71, 126, 0.15);
+            border: 1px solid rgba(255, 71, 126, 0.2);
+            color: var(--accent-heart);
+            grid-column: span 1;
+            animation: heartbeat 2s infinite ease-in-out;
+        }
+
+        .btn-heart:active {
+            background: rgba(255, 71, 126, 0.4);
+            transform: scale(0.9);
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* History Sliding Drawer */
+        .history-drawer {
+            position: absolute;
+            left: 0;
+            bottom: -100%;
+            width: 100%;
+            height: 80%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px 30px 0 0;
+            z-index: 50;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .history-drawer.open {
+            bottom: 0;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .history-header h3 {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .history-list::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+
+        .history-item {
+            text-align: right;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:active {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .history-item-formula {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .history-item-result {
+            font-size: 1.2rem;
+            color: var(--glow-color-1);
+            font-weight: 600;
+        }
+
+        .empty-history {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        /* Floating Hearts Animations */
+        .heart-particle {
+            position: absolute;
+            font-size: 1.5rem;
+            color: var(--accent-heart);
+            pointer-events: none;
+            z-index: 200;
+            animation: floatUp 1.5s forwards ease-out;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-150px) scale(1.6) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Sweet Quote Banner Notification */
+        .quote-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(255, 71, 126, 0.15);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 71, 126, 0.3);
+            border-radius: 20px;
+            padding: 16px 24px;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(255, 71, 126, 0.25);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+
+        .quote-modal.show {
+            transform: translateX(-50%) translateY(0);
+            pointer-events: all;
+        }
+
+        .quote-modal-icon {
+            font-size: 2rem;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+        }
+
+        .quote-modal-content {
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Audio Control Toggle */
+        .sound-status {
+            font-size: 0.6rem;
+            position: absolute;
+            bottom: -2px;
+            right: 0;
+            opacity: 0.5;
+        }
+
+        /* Responsive Mobile Layout Tweak */
+        @media (max-height: 700px) {
+            .calculator-container {
+                gap: 12px;
+                padding: 16px;
+            }
+            button.calc-btn {
+                height: 58px;
+                font-size: 1.3rem;
+            }
+            .display-screen {
+                min-height: 100px;
+            }
+            .main-input {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Glowing Blobs -->
+    <div class="ambient-glow">
+        <div class="glow-circle glow-circle-1"></div>
+        <div class="glow-circle glow-circle-2"></div>
+    </div>
+
+    <!-- main calculator wrapper -->
+    <div class="calculator-container" id="calculator">
+        <!-- Header -->
+        <div class="calculator-header">
+            <div class="logo-text">x_Nello 💕</div>
+            <div class="header-actions">
+                <a href="../index.html" class="action-btn" title="Zurück zum Hub" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; border: none; background: transparent; cursor: pointer; outline: none;">🏠</a>
+                <button class="action-btn" id="theme-trigger" title="Design ändern">🎨</button>
+                <button class="action-btn" id="history-trigger" title="Verlauf anzeigen">⏳</button>
+                <button class="action-btn" id="sound-trigger" title="Ton stummschalten">🔊</button>
+            </div>
+        </div>
+
+        <!-- Theme Popup Drawer -->
+        <div class="theme-panel" id="theme-panel">
+            <div class="theme-option active" data-theme-val="neon">
+                <span class="theme-dot" style="background: linear-gradient(135deg, #00f2fe, #7f00ff);"></span>
+                <span>Neon Fusion</span>
+            </div>
+            <div class="theme-option" data-theme-val="turquoise">
+                <span class="theme-dot" style="background: #00f2fe;"></span>
+                <span>Türkis Traum</span>
+            </div>
+            <div class="theme-option" data-theme-val="purple">
+                <span class="theme-dot" style="background: #7f00ff;"></span>
+                <span>Lila Magie</span>
+            </div>
+        </div>
+
+        <!-- Screen Display -->
+        <div class="display-screen">
+            <div class="formula-preview" id="formula-display"></div>
+            <div class="main-input" id="result-display">0</div>
+        </div>
+
+        <!-- Grid layout for buttons -->
+        <div class="calculator-buttons">
+            <!-- Row 1 -->
+            <button class="calc-btn btn-fn" data-val="AC">AC</button>
+            <button class="calc-btn btn-fn" data-val="DEL">⌫</button>
+            <button class="calc-btn btn-fn" data-val="%">%</button>
+            <button class="calc-btn btn-op" data-val="/">÷</button>
+
+            <!-- Row 2 -->
+            <button class="calc-btn btn-num" data-val="7">7</button>
+            <button class="calc-btn btn-num" data-val="8">8</button>
+            <button class="calc-btn btn-num" data-val="9">9</button>
+            <button class="calc-btn btn-op" data-val="*">×</button>
+
+            <!-- Row 3 -->
+            <button class="calc-btn btn-num" data-val="4">4</button>
+            <button class="calc-btn btn-num" data-val="5">5</button>
+            <button class="calc-btn btn-num" data-val="6">6</button>
+            <button class="calc-btn btn-op" data-val="-">−</button>
+
+            <!-- Row 4 -->
+            <button class="calc-btn btn-num" data-val="1">1</button>
+            <button class="calc-btn btn-num" data-val="2">2</button>
+            <button class="calc-btn btn-num" data-val="3">3</button>
+            <button class="calc-btn btn-op" data-val="+">+</button>
+
+            <!-- Row 5 -->
+            <button class="calc-btn btn-heart" id="heart-btn" title="Liebesnachricht">💖</button>
+            <button class="calc-btn btn-num" data-val="0">0</button>
+            <button class="calc-btn btn-num" data-val=".">,</button>
+            <button class="calc-btn btn-eq" data-val="=">=</button>
+        </div>
+
+        <!-- Sliding History Drawer -->
+        <div class="history-drawer" id="history-drawer">
+            <div class="history-header">
+                <h3>⏳ Verlauf</h3>
+                <div style="display:flex; gap: 10px;">
+                    <button class="action-btn" id="clear-history" title="Verlauf leeren">🗑️</button>
+                    <button class="action-btn" id="close-history" title="Schließen">✖</button>
+                </div>
+            </div>
+            <div class="history-list" id="history-list">
+                <!-- Dynamic Items -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Quote Banner Pop-up -->
+    <div class="quote-modal" id="quote-modal">
+        <div class="quote-modal-icon">💖</div>
+        <div class="quote-modal-content" id="quote-content">x_Nello, du bist wunderbar!</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const resultDisplay = document.getElementById('result-display');
+        const formulaDisplay = document.getElementById('formula-display');
+        const themeTrigger = document.getElementById('theme-trigger');
+        const themePanel = document.getElementById('theme-panel');
+        const historyTrigger = document.getElementById('history-trigger');
+        const historyDrawer = document.getElementById('history-drawer');
+        const closeHistory = document.getElementById('close-history');
+        const clearHistory = document.getElementById('clear-history');
+        const historyList = document.getElementById('history-list');
+        const soundTrigger = document.getElementById('sound-trigger');
+        const heartBtn = document.getElementById('heart-btn');
+        const quoteModal = document.getElementById('quote-modal');
+        const quoteContent = document.getElementById('quote-content');
+
+        // State variables
+        let currentInput = '0';
+        let previousInput = '';
+        let currentOperator = '';
+        let shouldResetInput = false;
+        let isSoundEnabled = true;
+        let history = JSON.parse(localStorage.getItem('calculator_history')) || [];
+
+        // Sweet German messages for x_Nello
+        const sweetQuotes = [
+            "x_Nello, du bringst mein Herz zum Überlaufen! 💖",
+            "Du bist die wertvollste Variable in meinem Leben! 💕",
+            "Mein Herz schlägt im Takt deiner Nähe. 💞",
+            "Für die Welt bist du jemand, aber für mich bist du die Welt! 🌍❤️",
+            "Du + Ich = Unendlich. ♾️💖",
+            "x_Nello, du bist süßer als jede mathematische Schönheit! 🦄✨",
+            "Ich habe nachgerechnet: Du bist einfach perfekt! 💯",
+            "Du bist der schönste Grund für ein Lächeln! 😊💕",
+            "100% Liebe für meine x_Nello! 💜💎",
+            "Jeder Tag mit dir fühlt sich an wie ein Jackpot! 🌟❤️",
+            "Deine Liebe bringt jede Skala zum Schmelzen! 🔥🥰",
+            "Du bist mein Lieblingsmensch, heute und für immer! 💖",
+            "Du bist wie ein Diamant – unbezahlbar und wunderschön! 💎✨"
+        ];
+
+        // Synthesize click sound using Web Audio API
+        function playClick(type = 'click') {
+            if (!isSoundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'love') {
+                    // Sweet high-pitched magic bell sound
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.3); // C6
+                    
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                    
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } else if (type === 'operator') {
+                    // Slightly lower soft pop
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
+                    
+                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+                    
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.08);
+                } else {
+                    // Regular standard key click
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(650, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.06);
+                    
+                    gain.gain.setValueAtTime(0.03, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+                    
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.06);
+                }
+            } catch (err) {
+                console.log("Audio not allowed or supported yet.");
+            }
+        }
+
+        // Setup theme event listeners
+        themeTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themePanel.style.display = themePanel.style.display === 'flex' ? 'none' : 'flex';
+            playClick('operator');
+        });
+
+        document.addEventListener('click', () => {
+            themePanel.style.display = 'none';
+        });
+
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                
+                const selectedTheme = this.getAttribute('data-theme-val');
+                if (selectedTheme === 'neon') {
+                    document.body.removeAttribute('data-theme');
+                } else {
+                    document.body.setAttribute('data-theme', selectedTheme);
+                }
+                themePanel.style.display = 'none';
+                playClick('love');
+            });
+        });
+
+        // Audio toggle
+        soundTrigger.addEventListener('click', () => {
+            isSoundEnabled = !isSoundEnabled;
+            soundTrigger.innerText = isSoundEnabled ? '🔊' : '🔇';
+            if (isSoundEnabled) playClick('click');
+        });
+
+        // History UI Drawer Controls
+        historyTrigger.addEventListener('click', () => {
+            renderHistory();
+            historyDrawer.classList.add('open');
+            playClick('operator');
+        });
+
+        closeHistory.addEventListener('click', () => {
+            historyDrawer.classList.remove('open');
+            playClick('operator');
+        });
+
+        clearHistory.addEventListener('click', () => {
+            history = [];
+            localStorage.removeItem('calculator_history');
+            renderHistory();
+            playClick('operator');
+        });
+
+        // Calculator Button Inputs
+        document.querySelectorAll('.calc-btn').forEach(btn => {
+            if (btn.id === 'heart-btn') return; // Handled separately
+            btn.addEventListener('click', () => {
+                const val = btn.getAttribute('data-val');
+                handleInput(val);
+            });
+        });
+
+        function handleInput(val) {
+            const isOperator = ['+', '-', '*', '/'].includes(val);
+            
+            if (isOperator) {
+                playClick('operator');
+                setOperator(val);
+            } else if (val === '=') {
+                playClick('love');
+                calculate();
+            } else if (val === 'AC') {
+                playClick('operator');
+                clearAll();
+            } else if (val === 'DEL') {
+                playClick('operator');
+                backspace();
+            } else if (val === '%') {
+                playClick('operator');
+                percentage();
+            } else if (val === '.') {
+                playClick('click');
+                inputDecimal();
+            } else {
+                playClick('click');
+                inputDigit(val);
+            }
+            updateDisplay();
+        }
+
+        // Handle negative numbers or signs if toggled (simple +/- support)
+        // Let's implement standard digits and basic calculations
+        function inputDigit(digit) {
+            if (currentInput === '0' || shouldResetInput) {
+                currentInput = digit;
+                shouldResetInput = false;
+            } else {
+                // Limit input length to prevent UI breaking
+                if (currentInput.length < 12) {
+                    currentInput += digit;
+                }
+            }
+        }
+
+        function inputDecimal() {
+            if (shouldResetInput) {
+                currentInput = '0.';
+                shouldResetInput = false;
+                return;
+            }
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+        }
+
+        function percentage() {
+            let value = parseFloat(currentInput);
+            if (!isNaN(value)) {
+                currentInput = (value / 100).toString();
+            }
+        }
+
+        function backspace() {
+            if (shouldResetInput) {
+                formulaDisplay.innerText = '';
+                return;
+            }
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+        }
+
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            currentOperator = '';
+            shouldResetInput = false;
+            formulaDisplay.innerText = '';
+        }
+
+        function setOperator(operator) {
+            if (currentOperator && !shouldResetInput) {
+                calculate();
+            }
+            previousInput = currentInput;
+            currentOperator = operator;
+            shouldResetInput = true;
+            
+            const displayOp = getOperatorSymbol(operator);
+            formulaDisplay.innerText = `${formatNumber(previousInput)} ${displayOp}`;
+        }
+
+        function getOperatorSymbol(op) {
+            switch(op) {
+                case '+': return '+';
+                case '-': return '−';
+                case '*': return '×';
+                case '/': return '÷';
+                default: return '';
+            }
+        }
+
+        function calculate() {
+            if (!currentOperator || shouldResetInput) return;
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            switch (currentOperator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    if (current === 0) {
+                        resultDisplay.innerText = 'Fehler 💔';
+                        currentInput = '0';
+                        previousInput = '';
+                        currentOperator = '';
+                        shouldResetInput = true;
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+
+            // Fix precision floating point issues (e.g. 0.1 + 0.2 = 0.30000000000000004)
+            result = Math.round(result * 1e10) / 1e10;
+
+            const formulaText = `${formatNumber(previousInput)} ${getOperatorSymbol(currentOperator)} ${formatNumber(currentInput)} =`;
+            formulaDisplay.innerText = formulaText;
+            
+            // Add calculation to history
+            saveHistory(formulaText, result.toString());
+            
+            currentInput = result.toString();
+            currentOperator = '';
+            shouldResetInput = true;
+        }
+
+        // Format number strings for localized beautiful display
+        function formatNumber(numStr) {
+            if (numStr === 'Error' || numStr === 'Fehler 💔') return numStr;
+            const parts = numStr.split('.');
+            let integerPart = parts[0];
+            const decimalPart = parts[1];
+            
+            // Localize thousands separator
+            integerPart = parseFloat(integerPart).toLocaleString('de-DE');
+            
+            if (decimalPart !== undefined) {
+                return `${integerPart},${decimalPart}`;
+            }
+            return integerPart;
+        }
+
+        function updateDisplay() {
+            // Render formatted content
+            if (resultDisplay.innerText !== 'Fehler 💔') {
+                resultDisplay.innerText = formatNumber(currentInput);
+            }
+            
+            // Auto size display text if numbers are long
+            const length = resultDisplay.innerText.length;
+            if (length > 12) {
+                resultDisplay.style.fontSize = '1.8rem';
+            } else if (length > 8) {
+                resultDisplay.style.fontSize = '2.3rem';
+            } else {
+                resultDisplay.style.fontSize = '3rem';
+            }
+        }
+
+        // LocalStorage History
+        function saveHistory(formula, result) {
+            history.unshift({ formula, result });
+            if (history.length > 50) history.pop(); // Cap history items at 50
+            localStorage.setItem('calculator_history', JSON.stringify(history));
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            if (history.length === 0) {
+                historyList.innerHTML = `<div class="empty-history">Noch keine Berechnungen</div>`;
+                return;
+            }
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div class="history-item-formula">${item.formula}</div>
+                    <div class="history-item-result">${formatNumber(item.result)}</div>
+                `;
+                div.addEventListener('click', () => {
+                    currentInput = item.result;
+                    formulaDisplay.innerText = '';
+                    shouldResetInput = false;
+                    updateDisplay();
+                    historyDrawer.classList.remove('open');
+                    playClick('click');
+                });
+                historyList.appendChild(div);
+            });
+        }
+
+        // Love Notification modal trigger
+        heartBtn.addEventListener('click', (e) => {
+            playClick('love');
+            createFloatingHearts(e);
+            
+            // Pick a random quote
+            const randomIndex = Math.floor(Math.random() * sweetQuotes.length);
+            quoteContent.innerText = sweetQuotes[randomIndex];
+            
+            quoteModal.classList.add('show');
+            
+            // Autohide banner after 3.5 seconds
+            setTimeout(() => {
+                quoteModal.classList.remove('show');
+            }, 3500);
+        });
+
+        // Floating hearts generator
+        function createFloatingHearts(e) {
+            const count = 12;
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart-particle';
+                    heart.innerText = ['💖', '💕', '❤️', '💜', '💘', '🌸'][Math.floor(Math.random() * 6)];
+                    
+                    // Coordinates around the button click
+                    const rect = heartBtn.getBoundingClientRect();
+                    const startX = rect.left + rect.width / 2;
+                    const startY = rect.top;
+                    
+                    heart.style.left = `${startX + (Math.random() - 0.5) * 60}px`;
+                    heart.style.top = `${startY + (Math.random() - 0.5) * 30}px`;
+                    
+                    // Random horizontal movement
+                    const travelX = (Math.random() - 0.5) * 120;
+                    heart.style.setProperty('--travel-x', `${travelX}px`);
+                    
+                    // Inject CSS animation override dynamically
+                    const speed = 1 + Math.random() * 0.8;
+                    heart.style.animation = `floatUp ${speed}s forwards ease-out`;
+                    
+                    document.body.appendChild(heart);
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        heart.remove();
+                    }, speed * 1000);
+                }, i * 60);
+            }
+        }
+
+        // Keyboard Support
+        document.addEventListener('keydown', (e) => {
+            let key = e.key;
+            if (key === 'Enter') key = '=';
+            if (key === 'Escape') key = 'AC';
+            if (key === 'Backspace') key = 'DEL';
+            if (key === ',') key = '.';
+            
+            const validKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/', '%', '=', 'AC', 'DEL', '.'];
+            if (validKeys.includes(key)) {
+                e.preventDefault();
+                handleInput(key);
+                
+                // Add active state styling dynamically to keyboard presses
+                const btn = document.querySelector(`button[data-val="${key === '*' ? '*' : key}"]`);
+                if (btn) {
+                    btn.style.transform = 'scale(0.93)';
+                    btn.style.filter = 'brightness(1.2)';
+                    setTimeout(() => {
+                        btn.style.transform = '';
+                        btn.style.filter = '';
+                    }, 100);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

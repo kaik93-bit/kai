@@ -614,8 +614,7 @@
 
         <main>
             <section class="welcome-hero">
-                <h1>Willkommen in deiner <span>Test-Umgebung</span></h1>
-                <p>Verwalte und teste deine zukünftigen Webprojekte hier. Alle neuen Unterprojekte können unten aufgeführt und direkt im Browser gestartet werden.</p>
+                <h1>Dev <span>Playground</span></h1>
             </section>
 
             <!-- Projects Grid -->
@@ -634,15 +633,15 @@
                     <span class="project-link" style="color: var(--text-secondary);">Aktuelle Ansicht</span>
                 </article>
 
-                <!-- Project Placeholder 1 -->
-                <article class="project-card" onclick="openProject('project1')">
+                <!-- Project 1: MindfulMe -->
+                <article class="project-card" onclick="openProject('mindfulme')">
                     <div>
                         <div class="card-header">
-                            <div class="project-icon">🧮</div>
+                            <div class="project-icon">🧘</div>
                             <span class="project-status status-active">Aktiv</span>
                         </div>
-                        <h2 class="project-title">Fancy Taschenrechner</h2>
-                        <p class="project-desc">Ein stylischer Taschenrechner in Türkis & Lila mit Soundeffekten und einer netten Herz-Taste für gute Laune.</p>
+                        <h2 class="project-title">MindfulMe</h2>
+                        <p class="project-desc">Ein interaktiver Mental-Health-Prototyp im Handy-Format. Enthält Atemübungen, Stimmungstracker und ein Tagebuch.</p>
                     </div>
                     <a href="#" class="project-link" onclick="event.preventDefault()">
                         Starten
@@ -653,15 +652,15 @@
                     </a>
                 </article>
 
-                <!-- Project Placeholder 2 -->
-                <article class="project-card" onclick="openProject('project2')">
+                <!-- Project 2: Nello's Magic Calculator -->
+                <article class="project-card" onclick="openProject('calculator')">
                     <div>
                         <div class="card-header">
-                            <div class="project-icon">⚡</div>
-                            <span class="project-status status-empty">Demnächst</span>
+                            <div class="project-icon">💖</div>
+                            <span class="project-status status-active">Aktiv</span>
                         </div>
-                        <h2 class="project-title">Zukünftiges Projekt</h2>
-                        <p class="project-desc">Bereit für deine nächste Idee. Einfach einen weiteren Ordner im Repository erstellen und hier verknüpfen.</p>
+                        <h2 class="project-title">Nello's Calculator</h2>
+                        <p class="project-desc">Nellos zauberhafter Taschenrechner mit verschiedenen Neon-Themes, Berechnungs-Verlauf und einem schwebenden Herz-Effekt-Knopf.</p>
                     </div>
                     <a href="#" class="project-link" onclick="event.preventDefault()">
                         Starten
@@ -671,43 +670,10 @@
                         </svg>
                     </a>
                 </article>
-
-                <!-- How-to Guide for adding new folders -->
-                <section class="guide-box">
-                    <h2>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                        Wie füge ich neue Testprojekte hinzu?
-                    </h2>
-                    <ul class="guide-list">
-                        <li class="guide-item">
-                            <span>1.</span>
-                            <span>Erstelle in deinem GitHub-Ordner einen neuen Unterordner (z. B. <code>project1</code>).</span>
-                        </li>
-                        <li class="guide-item">
-                            <span>2.</span>
-                            <span>Erstelle in diesem neuen Ordner eine <code>index.html</code> (das wird die Startseite des Testprojekts).</span>
-                        </li>
-                        <li class="guide-item">
-                            <span>3.</span>
-                            <span>Pushe die Änderungen mit deiner GitHub App. Das Projekt ist dann automatisch unter <code>kaik93-bit.github.io/kai/project1/</code> erreichbar!</span>
-                        </li>
-                        <li class="guide-item" style="margin-top: 1rem; color: var(--purple);">
-                            <span>💡 Tipp:</span>
-                            <span>Wenn du möchtest, dass auch deine Unterordner passwortgeschützt sind, kopiere einfach den Passwort-Teil aus dieser Datei in das Skript der neuen Seite.</span>
-                        </li>
-                    </ul>
-                </section>
 
             </section>
         </main>
-
-        <footer class="db-footer">
-            <p>GitHub Repository: <a href="https://github.com/kaik93-bit/kai" target="_blank">kaik93-bit/kai</a></p>
-        </footer>
+    </section>
     </section>
 
     <!-- SOUND SYNTHESIS FOR BUTTONS -->
@@ -919,10 +885,11 @@
             }, 500);
         }
 
+
         function openProject(folderName) {
             sound.playBeep(600, 0.1);
-            // Navigate to subfolder
-            window.location.href = `./${folderName}/`;
+            // Weiterleitung direkt zur index.html des Unterprojekts
+            window.location.href = `./${folderName}/index.html`;
         }
     </script>
 </body>
