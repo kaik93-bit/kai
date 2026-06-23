@@ -767,8 +767,16 @@
         const sound = new SoundEffects();
 
         // --- PASSWORD GATE LOGIC ---
-        const CORRECT_PASSCODE = "4509";
+        const HASHED_PASSCODE = "55c5de31ec754ba40fb1687ff4f4e0d95142f5ca2765c4839b618329190a434b";
         let enteredCode = "";
+
+        // Hilfsfunktion zur Erzeugung eines SHA-256 Hashes im Browser
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
         // Check if user is already unlocked in this session
         window.addEventListener('DOMContentLoaded', () => {
@@ -816,13 +824,16 @@
             }
         }
 
-        function submitPasscode() {
+        async function submitPasscode() {
             if (enteredCode.length < 4) return;
 
             const lockContainer = document.getElementById('lock-container');
             const dots = document.querySelectorAll('.code-dot');
 
-            if (enteredCode === CORRECT_PASSCODE) {
+            // Hash den eingegebenen Code
+            const enteredHash = await sha256(enteredCode);
+
+            if (enteredHash === HASHED_PASSCODE) {
                 // SUCCESS
                 sound.playSuccess();
                 dots.forEach(dot => {
